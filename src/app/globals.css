@@ -1,0 +1,23 @@
+@import "tailwindcss";
+@import "prismjs/themes/prism-tomorrow.css";
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #475569 transparent;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #475569;
+  border-radius: 9999px;
+}
+
+pre[class*="language-"] {
+  background: transparent !important;
+  margin: 0 !important;
+}
+
