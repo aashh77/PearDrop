@@ -8,3 +8,4 @@ src/db/.env
 .DS_Store
 deploy.md
 details.md
+drizzle.config.json
