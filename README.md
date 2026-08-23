@@ -175,21 +175,3 @@ required.
 - Browsers without the File System Access API (Firefox, Safari, all mobile browsers today)
   buffer received files fully in memory before offering a download link, so extremely large
   transfers (multi-GB) work best in Chrome/Edge on desktop on both ends.
-
-
-
-
-
-
-
-
-
-  PearDrop — P2P Local File & Snippet Transfer Tool
-Stack (all plain JavaScript/JSX, zero .ts/.tsx source files): Next.js 16 App Router, React 19, Tailwind CSS v4, WebRTC, Server-Sent Events, PostgreSQL + Drizzle ORM, Prism.js.
-
-Architecture:
-
-Signaling (src/app/api/signal/*, src/lib/signalStore.js): Instead of a separate WebSocket/Socket.io process, I implemented signaling using Next.js route handlers with Server-Sent Events + fetch — runs on the same HTTP port, no extra process needed. Peers are auto-grouped by public IP (Snapdrop-style), so any devices on the same Wi-Fi/LAN instantly discover each other; a shareable room code lets devices on different networks pair up too.
-Transport (src/lib/webrtc.js): Real RTCPeerConnection + RTCDataChannel, chunked File.slice() transfer (64KB chunks), backpressure handling via bufferedAmount/bufferedamountlow, streaming CRC32 checksums (memory-safe, no full-file hashing), an offer/accept/reject handshake per file, ICE-restart reconnection logic, and optional direct-to-disk writing via the File System Access API.
-UI (src/components/*): device identity/rename, live peer list with connection status, drag-and-drop file transfers with progress + checksum badges, a Prism.js-powered code/text snippet composer with copy-to-clipboard, incoming-file accept/decline modal, toast notifications, and a Postgres-backed "recent activity" history panel.
-Database: a single transfers table logs only transfer metadata (never file contents) for the history panel.
