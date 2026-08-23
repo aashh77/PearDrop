@@ -27,14 +27,25 @@ export default function FileDropZone({ disabled, onFiles }) {
       }}
       onClick={() => !disabled && inputRef.current?.click()}
       className={cx(
-        "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-4 py-8 text-center transition",
+        "group flex cursor-pointer flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed px-6 py-10 text-center transition",
         disabled && "cursor-not-allowed opacity-50",
-        dragging ? "border-sky-500 bg-sky-950/30" : "border-slate-700 bg-slate-900/40 hover:border-slate-600",
+        dragging
+          ? "border-violet-400 bg-violet-500/10"
+          : "border-neutral-700 bg-neutral-900/40 hover:border-violet-500/60 hover:bg-neutral-900/60",
       )}
     >
-      <IconUpload className="text-sky-400" />
-      <p className="text-sm font-medium text-white">Drag & drop files here</p>
-      <p className="text-xs text-slate-400">or click to browse — any size, sent directly in 64KB chunks</p>
+      <div
+        className={cx(
+          "flex h-14 w-14 items-center justify-center rounded-2xl transition",
+          dragging ? "bg-violet-500 text-white" : "bg-neutral-800 text-neutral-400 group-hover:text-violet-300",
+        )}
+      >
+        <IconUpload className="h-7 w-7" />
+      </div>
+      <div>
+        <p className="text-sm font-semibold text-white">Drop files to send</p>
+        <p className="text-xs text-neutral-400">or click to browse · 64 KB chunks · direct P2P</p>
+      </div>
       <input
         ref={inputRef}
         type="file"

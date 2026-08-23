@@ -61,9 +61,9 @@ export default function SnippetEditor({ disabled, onSend }) {
   }
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
+    <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-4 backdrop-blur-sm">
       <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-white">
-        <IconCode className="text-emerald-400" />
+        <IconCode className="text-violet-400" />
         <span>Send a text / code snippet</span>
       </div>
 
@@ -72,12 +72,12 @@ export default function SnippetEditor({ disabled, onSend }) {
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="label (optional), e.g. notes.md"
-          className="min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-white placeholder:text-slate-600 outline-none focus:border-emerald-500"
+          className="min-w-0 flex-1 rounded-xl border border-neutral-700 bg-black px-2.5 py-1.5 text-xs text-white placeholder:text-neutral-600 outline-none transition focus:border-violet-500"
         />
         <select
           value={language}
           onChange={(e) => setLanguage(e.target.value)}
-          className="rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-white outline-none focus:border-emerald-500"
+          className="rounded-xl border border-neutral-700 bg-black px-2.5 py-1.5 text-xs text-white outline-none transition focus:border-violet-500"
         >
           {LANGUAGES.map((lang) => (
             <option key={lang} value={lang}>
@@ -92,11 +92,11 @@ export default function SnippetEditor({ disabled, onSend }) {
         onChange={(e) => setContent(e.target.value)}
         rows={5}
         placeholder="Paste or type text/code to share instantly…"
-        className="w-full resize-y rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 font-mono text-xs text-white placeholder:font-sans placeholder:text-slate-600 outline-none focus:border-emerald-500"
+        className="w-full resize-y rounded-xl border border-neutral-700 bg-black px-3 py-2 font-mono text-xs text-white placeholder:font-sans placeholder:text-neutral-600 outline-none transition focus:border-violet-500"
       />
 
       {content && (
-        <pre className="mt-2 max-h-40 overflow-auto rounded-lg border border-slate-800 bg-black/60 p-3 text-xs">
+        <pre className="mt-2 max-h-40 overflow-auto rounded-xl border border-neutral-800 bg-black/60 p-3 text-xs">
           <code
             className={`language-${language}`}
             dangerouslySetInnerHTML={{ __html: highlighted }}
@@ -109,7 +109,7 @@ export default function SnippetEditor({ disabled, onSend }) {
           type="button"
           disabled={disabled || !content.trim()}
           onClick={handleSend}
-          className="rounded-lg bg-emerald-600 px-4 py-1.5 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-1.5 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         >
           Send snippet
         </button>

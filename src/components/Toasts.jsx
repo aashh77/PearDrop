@@ -12,9 +12,9 @@ export default function Toasts({ toasts, onDismiss }) {
           key={toast.id}
           className={cx(
             "pointer-events-auto flex items-start gap-2 rounded-xl border px-4 py-3 text-sm shadow-lg backdrop-blur",
-            toast.kind === "error" && "border-rose-500/40 bg-rose-950/80 text-rose-100",
-            toast.kind === "success" && "border-emerald-500/40 bg-emerald-950/80 text-emerald-100",
-            (!toast.kind || toast.kind === "info") && "border-slate-600/40 bg-slate-900/90 text-slate-100",
+            toast.kind === "error" && "border-rose-500/30 bg-rose-950/80 text-rose-100",
+            toast.kind === "success" && "border-emerald-500/30 bg-emerald-950/80 text-emerald-100",
+            (!toast.kind || toast.kind === "info") && "border-neutral-700/50 bg-neutral-900/90 text-neutral-100",
           )}
         >
           <span className="mt-0.5 shrink-0">

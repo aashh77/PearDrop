@@ -407,61 +407,94 @@ export default function LocalDropApp({ initialHistory }) {
   const activeTransfers = transfersByPeer[activePeerId] || { items: [], snippets: [] };
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
-      <header className="flex flex-col gap-1">
-        <h1 className="bg-gradient-to-r from-sky-400 to-emerald-400 bg-clip-text text-3xl font-bold text-transparent">
-          LocalDrop
-        </h1>
-        <p className="text-sm text-slate-400">
-          Peer-to-peer file &amp; snippet transfer. Files stream directly between browsers over WebRTC — nothing is
-          uploaded to a server.
-        </p>
+    <div className="flex min-h-screen flex-col">
+      <header className="sticky top-0 z-40 border-b border-neutral-800/60 bg-black/80 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-4 sm:px-6 lg:px-8">
+          <img src="/logo.png" alt="" className="h-9 w-9 shrink-0 rounded-lg" />
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold tracking-tight text-white">PearDrop</h1>
+            <p className="hidden text-xs text-neutral-400 sm:block">
+              P2P file &amp; snippet transfer. Nothing is uploaded to a server.
+            </p>
+          </div>
+          <div className="ml-auto flex items-center gap-2">
+            {ready ? (
+              <span className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-400">
+                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                Online
+              </span>
+            ) : (
+              <span className="rounded-full border border-neutral-800 bg-neutral-900/60 px-2.5 py-1 text-xs text-neutral-500">
+                Connecting…
+              </span>
+            )}
+          </div>
+        </div>
       </header>
 
-      <div className="grid flex-1 grid-cols-1 gap-6 lg:grid-cols-[20rem_1fr]">
-        <aside className="flex flex-col gap-4">
-          {ready ? (
-            <DeviceBadge name={myName} deviceType={myDeviceType} onRename={handleRename} />
-          ) : (
-            <div className="animate-pulse rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-6 text-center text-xs text-slate-500">
-              Connecting to signaling server…
-            </div>
-          )}
+      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
+        <div className="grid flex-1 grid-cols-1 gap-6 lg:grid-cols-[22rem_1fr]">
+          {/* Aside contains Device Info, Room Join, and Peer List. History is rendered separately below on mobile */}
+          <aside className="flex flex-col gap-5">
+            {ready ? (
+              <DeviceBadge name={myName} deviceType={myDeviceType} onRename={handleRename} />
+            ) : (
+              <div className="animate-pulse rounded-2xl border border-neutral-800 bg-neutral-900/60 px-4 py-6 text-center text-xs text-neutral-500">
+                Connecting to signaling server…
+              </div>
+            )}
 
-          <RoomJoin networkKey={networkKey} onJoinRoom={(code) => switchNetwork(code)} onUseLocalNetwork={() => switchNetwork("")} />
+            <RoomJoin networkKey={networkKey} onJoinRoom={(code) => switchNetwork(code)} onUseLocalNetwork={() => switchNetwork("")} />
 
-          <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Nearby devices</p>
-            <PeerList peers={peers} connections={connectionStatus} activePeerId={activePeerId} onSelectPeer={selectPeer} />
+            <section>
+              <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-neutral-500">Nearby devices</h2>
+              <PeerList peers={peers} connections={connectionStatus} activePeerId={activePeerId} onSelectPeer={selectPeer} />
+            </section>
+
+            {/* Hidden on mobile, shown on desktop inside sidebar */}
+            <section className="hidden lg:flex min-h-0 flex-1 flex-col">
+              <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-neutral-500">Recent activity</h2>
+              <HistoryPanel history={history} />
+            </section>
+          </aside>
+
+          {/* Main area contains transfer panel, and recent activity directly underneath on mobile */}
+          <div className="flex flex-col gap-6">
+            <main className="flex min-h-[24rem] flex-1 flex-col">
+              {activePeer ? (
+                <TransferPanel
+                  peer={activePeer}
+                  status={connectionStatus[activePeer.id] || "connecting"}
+                  items={activeTransfers.items}
+                  snippets={activeTransfers.snippets}
+                  myName={myName}
+                  onSendFiles={(files) => handleSendFiles(activePeer.id, files)}
+                  onSendSnippet={(payload) => handleSendSnippet(activePeer.id, payload)}
+                />
+              ) : (
+                <div className="flex flex-1 flex-col items-center justify-center rounded-3xl border border-dashed border-neutral-800 bg-neutral-900/30 p-10 text-center">
+                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-neutral-900 text-neutral-500">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M12 16V4" />
+                      <path d="m6 10 6-6 6 6" />
+                      <path d="M4 20h16" />
+                    </svg>
+                  </div>
+                  <p className="text-lg font-semibold text-white">Select a device to start transferring</p>
+                  <p className="mt-1 max-w-sm text-sm text-neutral-400">
+                    Open PearDrop on another device connect to it from the list.
+                  </p>
+                </div>
+              )}
+            </main>
+
+            {/* Shown only on mobile devices below the transfer panel/placeholder */}
+            <section className="flex lg:hidden flex-col">
+              <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-neutral-500">Recent activity</h2>
+              <HistoryPanel history={history} />
+            </section>
           </div>
-
-          <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Recent activity</p>
-            <HistoryPanel history={history} />
-          </div>
-        </aside>
-
-        <main className="flex flex-1 flex-col">
-          {activePeer ? (
-            <TransferPanel
-              peer={activePeer}
-              status={connectionStatus[activePeer.id] || "connecting"}
-              items={activeTransfers.items}
-              snippets={activeTransfers.snippets}
-              myName={myName}
-              onSendFiles={(files) => handleSendFiles(activePeer.id, files)}
-              onSendSnippet={(payload) => handleSendSnippet(activePeer.id, payload)}
-            />
-          ) : (
-            <div className="flex flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-800 bg-slate-900/30 p-10 text-center">
-              <p className="text-lg font-medium text-white">Select a device to start transferring</p>
-              <p className="mt-1 max-w-sm text-sm text-slate-400">
-                Open LocalDrop on another device connected to the same network (or share a room code) and pick it
-                from the list on the left.
-              </p>
-            </div>
-          )}
-        </main>
+        </div>
       </div>
 
       <IncomingOfferModal

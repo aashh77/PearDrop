@@ -22,16 +22,16 @@ export default function TransferPanel({ peer, status, items, snippets, onSendFil
 
   return (
     <div className="flex flex-1 flex-col gap-4">
-      <div className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-800 text-slate-200">
+      <div className="flex items-center gap-3 rounded-2xl border border-neutral-800 bg-neutral-900/60 px-4 py-3 backdrop-blur-sm">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-800 text-neutral-200">
           {deviceIcon(peer.deviceType)}
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-white">{peer.name}</p>
-          <p className="text-xs text-slate-400">{STATUS_TEXT[status] || status}</p>
+          <p className="text-xs text-neutral-400">{STATUS_TEXT[status] || status}</p>
         </div>
         {!isFileSystemAccessSupported() && (
-          <p className="hidden max-w-[12rem] text-right text-[11px] text-slate-500 sm:block">
+          <p className="hidden max-w-[12rem] text-right text-[11px] text-neutral-500 sm:block">
             This browser buffers received files in memory (no File System Access API).
           </p>
         )}
@@ -43,7 +43,7 @@ export default function TransferPanel({ peer, status, items, snippets, onSendFil
 
       {ordered.length > 0 && (
         <div className="flex flex-col gap-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Transfers</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Transfers</p>
           {ordered.map((item) => (
             <ProgressItem key={item.id} item={item} />
           ))}
@@ -52,7 +52,7 @@ export default function TransferPanel({ peer, status, items, snippets, onSendFil
 
       {snippets.length > 0 && (
         <div className="flex flex-col gap-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Snippets</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Snippets</p>
           {snippets.map((snippet) => (
             <SnippetCard key={snippet.id} snippet={snippet} />
           ))}

@@ -1,17 +1,14 @@
-# LocalDrop 🚀
+# PearDrop
 
-**LocalDrop** is a self-hosted, web-based peer-to-peer file & code-snippet transfer tool.
+**PearDrop** is a self-hosted, web-based peer-to-peer file & code-snippet transfer tool.
 Open it on any two devices — a laptop, a phone, a tablet — connected to the same Wi-Fi/LAN
 (or paired remotely with a room code), and drag-and-drop files or paste code straight from
 one browser to the other. Files travel **directly between browsers over WebRTC** — they are
 never uploaded to, or stored on, any server.
 
-Built entirely in **plain JavaScript / JSX** (no TypeScript source files) on top of the
-Next.js App Router.
-
 ---
 
-## ✨ Features
+## Features
 
 - **Zero-config discovery** — devices on the same network are grouped automatically (by
   public IP, the same trick AirDrop/Snapdrop-style tools use) and show up in a live "Nearby
@@ -47,11 +44,11 @@ Next.js App Router.
 
 ---
 
-## 🧱 Tech stack
+## Tech stack
 
 | Layer                | Technology |
 |-----------------------|------------|
-| Framework              | Next.js 16 (App Router), **JavaScript / JSX only — no TypeScript** |
+| Framework              | Next.js 16 (App Router), **JavaScript** |
 | UI                     | React 19, Tailwind CSS v4 |
 | Signaling transport    | Server-Sent Events (SSE) + `fetch` (`/api/signal/*` route handlers) — no extra process, works over the same HTTP port as the app |
 | P2P data transport     | WebRTC `RTCPeerConnection` + `RTCDataChannel` (SCTP/DTLS/UDP), Google public STUN servers by default |
@@ -59,54 +56,10 @@ Next.js App Router.
 | Database               | PostgreSQL via Drizzle ORM (`transfer history` metadata only) |
 | Integrity verification | Custom streaming CRC32 implementation (`src/lib/crc32.js`) |
 
-### Why Server-Sent Events instead of raw WebSockets / Socket.io?
-
-Next.js `route.js` handlers can return a streaming `Response`, which lets us implement a
-classic "long-lived push channel" (SSE) using only standard Web APIs — no custom Node
-server, no extra process/port to expose, and it works cleanly behind the same reverse proxy
-that serves the rest of the app. The signaling server's job is intentionally tiny: broker
-SDP offers/answers and ICE candidates between two browsers so they can establish a *direct*
-WebRTC data channel. It never sees file bytes or snippet text.
 
 ---
 
-## 📂 Project structure
-
-```
-src/
-  app/
-    api/
-      health/route.js           # DB health check
-      signal/
-        join/route.js           # register a peer + return current peer list
-        events/route.js         # SSE stream: peer-list + forwarded WebRTC signals
-        message/route.js        # relay an SDP/ICE message to a specific peer
-        leave/route.js          # remove a peer (sendBeacon on tab close)
-      transfers/route.js        # GET/POST transfer-history metadata (Postgres)
-    layout.jsx
-    page.jsx                    # server component, loads initial history from DB
-    globals.css
-  components/
-    LocalDropApp.jsx            # main client-side orchestrator (state machine)
-    DeviceBadge.jsx / PeerList.jsx / RoomJoin.jsx
-    TransferPanel.jsx / FileDropZone.jsx / ProgressItem.jsx
-    SnippetEditor.jsx / SnippetCard.jsx
-    IncomingOfferModal.jsx / HistoryPanel.jsx / Toasts.jsx / Icons.jsx
-  lib/
-    webrtc.js                   # PeerSession: RTCPeerConnection + data channel protocol
-    signalingClient.js          # browser-side SSE/fetch signaling client
-    signalStore.js              # server-side in-memory peer registry (SSE fan-out)
-    crc32.js                    # streaming CRC32 checksum
-    deviceInfo.js                # friendly device names + device-type detection
-    format.js                   # byte/time formatting helpers
-  db/
-    index.js                    # Drizzle + pg Pool client
-    schema.js                   # `transfers` table (history metadata only)
-```
-
----
-
-## 🔧 Prerequisites
+## Prerequisites
 
 - **Node.js 20+** and **npm**
 - **PostgreSQL** running locally (or reachable via `DATABASE_URL`)
@@ -115,7 +68,7 @@ src/
 
 ---
 
-## 🚀 Running locally
+## Running locally
 
 1. **Install dependencies**
 
@@ -154,18 +107,9 @@ src/
 
 5. **Test a transfer between two devices**
 
-   - **Same machine (quick smoke test):** open the URL in two browser tabs/windows (or two
-     different browsers). Because they share `127.0.0.1`, they'll auto-discover each other
-     under "Nearby devices".
-   - **Two real devices on the same Wi-Fi:** find your computer's LAN IP
-     (`ipconfig`/`ifconfig`/`ip addr`, e.g. `192.168.1.42`), then browse to
-     `http://192.168.1.42:3000` from your phone/tablet/other laptop while connected to the
-     **same Wi-Fi network**. They should appear in each other's device list automatically.
-   - **Devices on different networks:** click "generate a new room code" on one device,
-     then enter that same code in the "Discovery network" box on the other device. Both will
-     re-join a shared virtual room and discover each other regardless of network, using
-     WebRTC's STUN servers (and TURN, if configured — see below) to establish the
-     connection.
+   - **Same machine (quick smoke test):**
+   - **Two real devices on the same Wi-Fi:** 
+   - **Devices on different networks:**
 
 6. **Send something!** Click a device in the list to open a direct connection, then either:
    - drag & drop (or click to browse) one or more files, or
@@ -178,7 +122,7 @@ src/
 
 ---
 
-## 🏗️ Building & running in production mode locally
+## Building & running in production mode locally
 
 ```bash
 npm run build
@@ -191,78 +135,13 @@ required.
 
 ---
 
-## 🌐 Deploying / running on your local network permanently
-
-LocalDrop is designed to be **self-hosted** — e.g. on a laptop, a home server, a Raspberry
-Pi, or a small VPS — rather than deployed to a serverless platform, because the signaling
-store is a lightweight **in-memory** registry that expects a single, long-running Node.js
-process (this is also why `npm run build && npm run start` is the recommended way to run it,
-rather than a serverless/edge deployment).
-
-1. Provision PostgreSQL reachable from that machine and set `DATABASE_URL` accordingly.
-2. `npm install && npx drizzle-kit push && npm run build`
-3. Run it as a long-lived process, e.g. with `pm2`:
-   ```bash
-   npm install -g pm2
-   pm2 start npm --name localdrop -- start
-   pm2 save
-   ```
-4. Devices on the same LAN can reach it at `http://<host-ip>:3000`. For access outside your
-   LAN (e.g. from cellular data), put it behind a reverse proxy with HTTPS (WebRTC/`getUserMedia`-adjacent
-   browser APIs — and some mobile browsers' clipboard/File System Access APIs — require a
-   secure context, i.e. HTTPS, once you're not on `localhost`).
-
-### Optional: configuring a TURN server for stricter NATs
-
-Plain STUN (used by default, via Google's public STUN servers) is enough for the vast
-majority of home/office networks and for same-LAN transfers. If you routinely need to
-connect devices behind symmetric NATs / restrictive corporate firewalls, add a TURN server
-by setting these **build-time** environment variables before `npm run build`:
-
-```bash
-NEXT_PUBLIC_TURN_URL=turn:your-turn-server:3478
-NEXT_PUBLIC_TURN_USERNAME=your-username
-NEXT_PUBLIC_TURN_CREDENTIAL=your-credential
-```
-
-(Free options for testing include running your own [coturn](https://github.com/coturn/coturn)
-instance.)
-
----
-
-## 🗄️ Database notes
-
-LocalDrop **never stores file contents or snippet text** in Postgres. The only table,
-`transfers`, records lightweight metadata for the "Recent activity" panel:
-
-| column          | type      | notes                                   |
-|-----------------|-----------|------------------------------------------|
-| `id`            | serial    | primary key |
-| `sender_name`   | varchar   | friendly device name of the sender |
-| `receiver_name` | varchar   | friendly device name of the receiver |
-| `item_type`     | varchar   | `"file"` or `"text"` |
-| `item_name`     | text      | file name, or snippet label |
-| `size_bytes`    | bigint    | transferred size in bytes |
-| `checksum`      | varchar   | CRC32 hex checksum (files only) |
-| `status`        | varchar   | `"completed"`, `"failed"`, or `"rejected"` |
-| `created_at`    | timestamp | defaults to `now()` |
-
-Schema source of truth: [`src/db/schema.js`](./src/db/schema.js). After editing it, apply
-changes with:
-
-```bash
-npx drizzle-kit push
-```
-
----
-
-## 🧠 How the transfer protocol works
+## How the transfer protocol works
 
 1. Browser A registers with the signaling server (`POST /api/signal/join`) and opens a
    Server-Sent Events stream (`GET /api/signal/events`) to receive live peer-list updates and
    forwarded signaling messages.
 2. When you click a discovered peer, browser A creates an `RTCPeerConnection`, opens a data
-   channel named `localdrop`, creates an SDP offer, and relays it through
+   channel named `PearDrop`, creates an SDP offer, and relays it through
    `POST /api/signal/message` to browser B.
 3. Browser B receives the offer via its own SSE stream, creates its `RTCPeerConnection`,
    answers, and both sides exchange ICE candidates the same way until a **direct**
@@ -281,21 +160,8 @@ npx drizzle-kit push
 
 ---
 
-## 🧪 Linting & type-checking
 
-Even though the project contains **no `.ts`/`.tsx` source files**, it keeps a minimal
-`tsconfig.json` (with `allowJs: true`) purely so editor tooling and Next.js's route-type
-generation continue to work smoothly:
-
-```bash
-npx next typegen        # generates .next/types for the App Router
-npm exec tsc -- --noEmit  # sanity-checks Next.js's generated route types
-npm run lint             # ESLint (eslint-config-next)
-```
-
----
-
-## ⚠️ Known limitations / good next steps
+## Scope for Future Development
 
 - Only one file transfer is streamed at a time *per direction* on a given connection
   (additional files you drop are queued and sent sequentially) to keep the chunk-framing
@@ -318,7 +184,7 @@ npm run lint             # ESLint (eslint-config-next)
 
 
 
-  LocalDrop — P2P Local File & Snippet Transfer Tool
+  PearDrop — P2P Local File & Snippet Transfer Tool
 Stack (all plain JavaScript/JSX, zero .ts/.tsx source files): Next.js 16 App Router, React 19, Tailwind CSS v4, WebRTC, Server-Sent Events, PostgreSQL + Drizzle ORM, Prism.js.
 
 Architecture:

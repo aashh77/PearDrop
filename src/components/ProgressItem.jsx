@@ -10,24 +10,31 @@ export default function ProgressItem({ item }) {
   const isFailed = item.status === "failed" || item.status === "rejected";
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
-      <div className="flex items-center gap-2">
-        <IconFile className="shrink-0 text-slate-400" />
+    <div className="rounded-xl border border-neutral-800 bg-neutral-900/60 p-3">
+      <div className="flex items-center gap-3">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-neutral-800 text-neutral-300">
+          <IconFile className="h-5 w-5" />
+        </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-white">{item.name}</p>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-neutral-400">
             {item.direction === "send" ? "Sending" : "Receiving"} · {formatBytes(item.bytesDone)} /{" "}
             {formatBytes(item.totalBytes)}
           </p>
         </div>
         {isDone && (
-          <span className={cx("flex items-center gap-1 text-xs", item.checksumOk === false ? "text-rose-400" : "text-emerald-400")}>
+          <span
+            className={cx(
+              "flex shrink-0 items-center gap-1 text-xs",
+              item.checksumOk === false ? "text-rose-400" : "text-emerald-400",
+            )}
+          >
             {item.checksumOk === false ? <IconAlert /> : <IconCheck />}
             {item.checksumOk === false ? "Checksum mismatch" : "Verified"}
           </span>
         )}
         {isFailed && (
-          <span className="flex items-center gap-1 text-xs text-rose-400">
+          <span className="flex shrink-0 items-center gap-1 text-xs text-rose-400">
             <IconAlert /> {item.status === "rejected" ? "Rejected" : "Failed"}
           </span>
         )}
@@ -35,7 +42,7 @@ export default function ProgressItem({ item }) {
           <a
             href={item.url}
             download={item.name}
-            className="flex items-center gap-1 rounded-lg bg-sky-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-sky-500"
+            className="flex shrink-0 items-center gap-1 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 px-2.5 py-1 text-xs font-medium text-white transition hover:opacity-90"
           >
             <IconDownload /> Save
           </a>
@@ -45,8 +52,11 @@ export default function ProgressItem({ item }) {
         )}
       </div>
       {!isDone && !isFailed && (
-        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
-          <div className="h-full rounded-full bg-sky-500 transition-all" style={{ width: `${pct}%` }} />
+        <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-neutral-800">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 transition-all"
+            style={{ width: `${pct}%` }}
+          />
         </div>
       )}
     </div>
