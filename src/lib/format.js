@@ -28,3 +28,50 @@ export function formatRelativeTime(dateInput) {
 export function cx(...classes) {
   return classes.filter(Boolean).join(" ");
 }
+
+/**
+ * Returns a new File object with a different name, preserving the original
+ * bytes/type/lastModified. Used to let a sender rename a file before it is
+ * offered to a peer (File.name is read-only, so we can't mutate in place).
+ */
+// Deterministic, theme-matching gradient pairs used for generated user
+// avatars — every stop stays within the pear logo's green -> violet range.
+const AVATAR_GRADIENTS = [
+  ["#4ade80", "#7c3aed"],
+  ["#22c55e", "#8b5cf6"],
+  ["#84cc16", "#a855f7"],
+  ["#2dd4bf", "#6366f1"],
+  ["#a3e635", "#c026d3"],
+  ["#34d399", "#7e22ce"],
+];
+
+function hashString(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i += 1) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
+export function avatarGradient(seed) {
+  const idx = hashString(seed || "device") % AVATAR_GRADIENTS.length;
+  return AVATAR_GRADIENTS[idx];
+}
+
+export function initialsFromName(name) {
+  const parts = (name || "").trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+}
+
+export function renameFile(file, newName) {
+  const trimmed = (newName || "").trim();
+  if (!trimmed || trimmed === file.name) return file;
+  try {
+    return new File([file], trimmed, { type: file.type, lastModified: file.lastModified });
+  } catch {
+    return file;
+  }
+}

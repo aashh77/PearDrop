@@ -1,6 +1,6 @@
 "use client";
 
-import { deviceIcon } from "@/components/Icons";
+import Avatar from "@/components/Avatar";
 import { cx } from "@/lib/format";
 
 const STATUS_LABEL = {
@@ -41,15 +41,13 @@ export default function PeerList({ peers, connections, activePeerId, onSelectPee
               type="button"
               onClick={() => onSelectPeer(peer)}
               className={cx(
-                "flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition",
+                "flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500",
                 isActive
-                  ? "border-violet-500 bg-violet-500/10"
+                  ? "border-emerald-500/70 bg-emerald-500/10"
                   : "border-neutral-800 bg-neutral-900/60 hover:border-neutral-700 hover:bg-neutral-800/60",
               )}
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-neutral-800 text-neutral-200">
-                {deviceIcon(peer.deviceType)}
-              </div>
+              <Avatar name={peer.name} deviceType={peer.deviceType} size="md" />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-white">{peer.name}</p>
                 <p className="flex items-center gap-1.5 text-xs text-neutral-400">

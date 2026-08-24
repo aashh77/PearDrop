@@ -41,7 +41,7 @@ export default function SnippetCard({ snippet }) {
         <button
           type="button"
           onClick={handleCopy}
-          className="flex shrink-0 items-center gap-1 rounded-xl border border-neutral-700 bg-neutral-800/60 px-2 py-1 text-xs text-neutral-200 transition hover:border-violet-500/50 hover:text-white"
+          className="flex shrink-0 items-center gap-1 rounded-xl border border-neutral-700 bg-neutral-800/60 px-2 py-1 text-xs text-neutral-200 transition hover:border-emerald-500/50 hover:text-white"
         >
           {copied ? <IconCheck className="text-emerald-400" /> : <IconCopy />}
           {copied ? "Copied" : "Copy"}

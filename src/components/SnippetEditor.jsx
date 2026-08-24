@@ -72,12 +72,14 @@ export default function SnippetEditor({ disabled, onSend }) {
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="label (optional), e.g. notes.md"
-          className="min-w-0 flex-1 rounded-xl border border-neutral-700 bg-black px-2.5 py-1.5 text-xs text-white placeholder:text-neutral-600 outline-none transition focus:border-violet-500"
+          aria-label="Snippet label"
+          className="min-w-0 flex-1 rounded-xl border border-neutral-700 bg-black px-2.5 py-1.5 text-xs text-white placeholder:text-neutral-600 outline-none transition focus:border-emerald-500"
         />
         <select
           value={language}
           onChange={(e) => setLanguage(e.target.value)}
-          className="rounded-xl border border-neutral-700 bg-black px-2.5 py-1.5 text-xs text-white outline-none transition focus:border-violet-500"
+          aria-label="Snippet language"
+          className="rounded-xl border border-neutral-700 bg-black px-2.5 py-1.5 text-xs text-white outline-none transition focus:border-emerald-500"
         >
           {LANGUAGES.map((lang) => (
             <option key={lang} value={lang}>
@@ -92,7 +94,8 @@ export default function SnippetEditor({ disabled, onSend }) {
         onChange={(e) => setContent(e.target.value)}
         rows={5}
         placeholder="Paste or type text/code to share instantly…"
-        className="w-full resize-y rounded-xl border border-neutral-700 bg-black px-3 py-2 font-mono text-xs text-white placeholder:font-sans placeholder:text-neutral-600 outline-none transition focus:border-violet-500"
+        aria-label="Snippet content"
+        className="w-full resize-y rounded-xl border border-neutral-700 bg-black px-3 py-2 font-mono text-xs text-white placeholder:font-sans placeholder:text-neutral-600 outline-none transition focus:border-emerald-500"
       />
 
       {content && (
@@ -109,7 +112,7 @@ export default function SnippetEditor({ disabled, onSend }) {
           type="button"
           disabled={disabled || !content.trim()}
           onClick={handleSend}
-          className="rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-1.5 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-xl bg-gradient-to-r from-emerald-500 to-violet-600 px-4 py-1.5 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         >
           Send snippet
         </button>

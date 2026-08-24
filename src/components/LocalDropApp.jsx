@@ -11,6 +11,7 @@ import Toasts from "@/components/Toasts";
 import { createSignalingClient } from "@/lib/signalingClient";
 import { PeerSession, isFileSystemAccessSupported } from "@/lib/webrtc";
 import { detectDeviceType, loadOrCreateDeviceName, persistDeviceName } from "@/lib/deviceInfo";
+import { renameFile } from "@/lib/format";
 
 export default function LocalDropApp({ initialHistory }) {
   const [ready, setReady] = useState(false);
@@ -164,6 +165,16 @@ export default function LocalDropApp({ initialHistory }) {
     [addToast, refreshHistory],
   );
 
+  const handleFileCancelled = useCallback((peerId, transferId) => {
+    setIncomingOffer((prev) =>
+      prev && prev.peerId === peerId && prev.offer.transferId === transferId ? null : prev,
+    );
+    updateTransfers(peerId, (cur) => ({
+      ...cur,
+      items: cur.items.map((it) => (it.id === transferId ? { ...it, status: "cancelled" } : it)),
+    }));
+  }, []);
+
   const createSession = useCallback(
     (peerId, isInitiator) => {
       const session = new PeerSession({
@@ -175,7 +186,9 @@ export default function LocalDropApp({ initialHistory }) {
           onError: (err) => addToast(err?.message || "Connection error", "error"),
           onProgress: (p) => updateItemProgress(peerId, p),
           onFileOffer: (offer) => handleFileOffer(peerId, offer),
+          onFileAccept: (msg) => updateItemStatus(peerId, msg.transferId, "active"),
           onFileComplete: (result) => handleFileComplete(peerId, result),
+          onFileCancelled: (transferId) => handleFileCancelled(peerId, transferId),
           onAck: (ack) => handleAck(peerId, ack),
           onTextReceived: (msg) => handleTextReceived(peerId, msg),
         },
@@ -184,7 +197,7 @@ export default function LocalDropApp({ initialHistory }) {
       session.start();
       return session;
     },
-    [addToast, handleAck, handleFileComplete, handleFileOffer, handleTextReceived],
+    [addToast, handleAck, handleFileCancelled, handleFileComplete, handleFileOffer, handleTextReceived],
   );
 
   const handleSignal = useCallback(
@@ -217,16 +230,31 @@ export default function LocalDropApp({ initialHistory }) {
     myNameRef.current = name;
     myDeviceTypeRef.current = type;
 
+    // A room code in the URL (e.g. from a shared QR code / link) lets a
+    // scanning device join that room automatically instead of typing it in.
+    let initialRoomCode = "";
+    try {
+      const params = new URLSearchParams(window.location.search);
+      initialRoomCode = (params.get("room") || "").toUpperCase().slice(0, 12);
+    } catch {
+      initialRoomCode = "";
+    }
+    roomCodeRef.current = initialRoomCode;
+    if (initialRoomCode) setRoomCode(initialRoomCode);
+
     const client = createSignalingClient();
     signalingRef.current = client;
     attachClientHandlers(client);
 
     client
-      .join({ name, deviceType: type, roomCode: "" })
+      .join({ name, deviceType: type, roomCode: initialRoomCode })
       .then(({ peers: initialPeers, networkKey: key }) => {
         setPeers(initialPeers);
         setNetworkKey(key);
         setReady(true);
+        if (initialRoomCode) {
+          window.history.replaceState({}, "", window.location.pathname);
+        }
       })
       .catch(() => addToast("Could not reach the signaling server. Retrying may help.", "error"));
 
@@ -303,7 +331,8 @@ export default function LocalDropApp({ initialHistory }) {
       addToast("Not connected to this device yet.", "error");
       return;
     }
-    for (const file of files) {
+    for (const entry of files) {
+      const file = entry?.file ? renameFile(entry.file, entry.name) : entry;
       const transferId = crypto.randomUUID();
       addItem(peerId, {
         id: transferId,
@@ -311,7 +340,7 @@ export default function LocalDropApp({ initialHistory }) {
         direction: "send",
         bytesDone: 0,
         totalBytes: file.size,
-        status: "active",
+        status: "pending",
         startedAt: Date.now(),
       });
       try {
@@ -323,19 +352,40 @@ export default function LocalDropApp({ initialHistory }) {
         pendingSendResultsRef.current[transferId] = { file, result, peerId };
         updateItemStatus(peerId, transferId, "verifying");
       } catch (err) {
-        const rejected = /rejected/i.test(err?.message || "");
-        updateItemFinal(peerId, transferId, { status: rejected ? "rejected" : "failed" });
-        addToast(`${rejected ? "Declined" : "Failed to send"}: ${file.name}`, "error");
-        logTransfer({
-          senderName: myNameRef.current,
-          receiverName: peerNameRef.current[peerId] || "peer",
-          itemType: "file",
-          itemName: file.name,
-          sizeBytes: file.size,
-          status: rejected ? "rejected" : "failed",
-        });
+        const message = err?.message || "";
+        const cancelled = /cancelled/i.test(message);
+        const rejected = /rejected/i.test(message);
+        const status = cancelled ? "cancelled" : rejected ? "rejected" : "failed";
+        updateItemFinal(peerId, transferId, { status });
+        if (cancelled) {
+          addToast(`Cancelled: ${file.name}`, "info");
+        } else {
+          addToast(`${rejected ? "Declined" : "Failed to send"}: ${file.name}`, "error");
+          logTransfer({
+            senderName: myNameRef.current,
+            receiverName: peerNameRef.current[peerId] || "peer",
+            itemType: "file",
+            itemName: file.name,
+            sizeBytes: file.size,
+            status,
+          });
+        }
       }
     }
+  }
+
+  function handleCancelSend(peerId, transferId) {
+    const session = sessionsRef.current[peerId];
+    session?.cancelSendFile(transferId);
+  }
+
+  function handleRenameItem(peerId, transferId, newName) {
+    const trimmed = (newName || "").trim();
+    if (!trimmed) return;
+    updateTransfers(peerId, (cur) => ({
+      ...cur,
+      items: cur.items.map((it) => (it.id === transferId ? { ...it, name: trimmed } : it)),
+    }));
   }
 
   function handleSendSnippet(peerId, { name, language, content }) {
@@ -407,24 +457,25 @@ export default function LocalDropApp({ initialHistory }) {
   const activeTransfers = transfersByPeer[activePeerId] || { items: [], snippets: [] };
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-40 border-b border-neutral-800/60 bg-black/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-4 sm:px-6 lg:px-8">
-          <img src="/logo.png" alt="" className="h-9 w-9 shrink-0 rounded-lg" />
+    <div className="flex min-h-[100dvh] flex-col">
+      <header className="pt-safe sticky top-0 z-40 border-b border-neutral-800/70 bg-neutral-950/85 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3.5 sm:px-6 lg:px-8">
+          <img src="/logo.png" alt="PearDrop" className="h-10 w-10 shrink-0 rounded-xl" />
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold tracking-tight text-white">PearDrop</h1>
-            <p className="hidden text-xs text-neutral-400 sm:block">
-              P2P file &amp; snippet transfer. Nothing is uploaded to a server.
+            <h1 className="font-display text-xl font-bold tracking-tight text-white sm:text-2xl">PearDrop</h1>
+            <p className="hidden text-sm text-neutral-400 sm:block">
+              Peer-to-peer file &amp; snippet transfer — nothing touches a server.
             </p>
           </div>
           <div className="ml-auto flex items-center gap-2">
             {ready ? (
-              <span className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-400">
-                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-300">
+                <span className="h-2 w-2 rounded-full bg-emerald-400" />
                 Online
               </span>
             ) : (
-              <span className="rounded-full border border-neutral-800 bg-neutral-900/60 px-2.5 py-1 text-xs text-neutral-500">
+              <span className="flex items-center gap-1.5 rounded-full border border-neutral-800 bg-neutral-900/60 px-3 py-1.5 text-xs text-neutral-500">
+                <span className="h-2 w-2 rounded-full bg-neutral-600" />
                 Connecting…
               </span>
             )}
@@ -432,14 +483,14 @@ export default function LocalDropApp({ initialHistory }) {
         </div>
       </header>
 
-      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
-        <div className="grid flex-1 grid-cols-1 gap-6 lg:grid-cols-[22rem_1fr]">
+      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
+        <div className="grid flex-1 grid-cols-1 gap-6 lg:grid-cols-[22rem_1fr] lg:items-start">
           {/* Aside contains Device Info, Room Join, and Peer List. History is rendered separately below on mobile */}
           <aside className="flex flex-col gap-5">
             {ready ? (
               <DeviceBadge name={myName} deviceType={myDeviceType} onRename={handleRename} />
             ) : (
-              <div className="animate-pulse rounded-2xl border border-neutral-800 bg-neutral-900/60 px-4 py-6 text-center text-xs text-neutral-500">
+              <div className="animate-pulse rounded-2xl border border-neutral-800 bg-neutral-900/60 px-4 py-6 text-center text-sm text-neutral-500">
                 Connecting to signaling server…
               </div>
             )}
@@ -463,6 +514,7 @@ export default function LocalDropApp({ initialHistory }) {
             <main className="flex min-h-[24rem] flex-1 flex-col">
               {activePeer ? (
                 <TransferPanel
+                  key={activePeer.id}
                   peer={activePeer}
                   status={connectionStatus[activePeer.id] || "connecting"}
                   items={activeTransfers.items}
@@ -470,19 +522,21 @@ export default function LocalDropApp({ initialHistory }) {
                   myName={myName}
                   onSendFiles={(files) => handleSendFiles(activePeer.id, files)}
                   onSendSnippet={(payload) => handleSendSnippet(activePeer.id, payload)}
+                  onCancelSend={(transferId) => handleCancelSend(activePeer.id, transferId)}
+                  onRenameItem={(transferId, name) => handleRenameItem(activePeer.id, transferId, name)}
                 />
               ) : (
                 <div className="flex flex-1 flex-col items-center justify-center rounded-3xl border border-dashed border-neutral-800 bg-neutral-900/30 p-10 text-center">
-                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-neutral-900 text-neutral-500">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500/15 to-violet-500/15 text-emerald-300">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                       <path d="M12 16V4" />
                       <path d="m6 10 6-6 6 6" />
                       <path d="M4 20h16" />
                     </svg>
                   </div>
                   <p className="text-lg font-semibold text-white">Select a device to start transferring</p>
-                  <p className="mt-1 max-w-sm text-sm text-neutral-400">
-                    Open PearDrop on another device connect to it from the list.
+                  <p className="mt-1.5 max-w-sm text-sm text-neutral-400">
+                    Open PearDrop on another device and connect to it from the list.
                   </p>
                 </div>
               )}

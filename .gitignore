@@ -9,3 +9,5 @@ src/db/.env
 deploy.md
 details.md
 drizzle.config.json
+drizzle.config.ts
+src/.DS_Store

@@ -15,6 +15,15 @@ export default function FileDropZone({ disabled, onFiles }) {
 
   return (
     <div
+      role="button"
+      tabIndex={disabled ? -1 : 0}
+      aria-disabled={disabled}
+      onKeyDown={(e) => {
+        if (!disabled && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          inputRef.current?.click();
+        }
+      }}
       onDragOver={(e) => {
         e.preventDefault();
         if (!disabled) setDragging(true);
@@ -27,17 +36,19 @@ export default function FileDropZone({ disabled, onFiles }) {
       }}
       onClick={() => !disabled && inputRef.current?.click()}
       className={cx(
-        "group flex cursor-pointer flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed px-6 py-10 text-center transition",
+        "group flex cursor-pointer flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed px-6 py-10 text-center transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500",
         disabled && "cursor-not-allowed opacity-50",
         dragging
-          ? "border-violet-400 bg-violet-500/10"
-          : "border-neutral-700 bg-neutral-900/40 hover:border-violet-500/60 hover:bg-neutral-900/60",
+          ? "border-emerald-400 bg-emerald-500/10"
+          : "border-neutral-700 bg-neutral-900/40 hover:border-emerald-500/50 hover:bg-neutral-900/60",
       )}
     >
       <div
         className={cx(
           "flex h-14 w-14 items-center justify-center rounded-2xl transition",
-          dragging ? "bg-violet-500 text-white" : "bg-neutral-800 text-neutral-400 group-hover:text-violet-300",
+          dragging
+            ? "bg-gradient-to-br from-emerald-500 to-violet-600 text-white"
+            : "bg-neutral-800 text-neutral-400 group-hover:text-emerald-300",
         )}
       >
         <IconUpload className="h-7 w-7" />

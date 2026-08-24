@@ -130,6 +130,49 @@ export function IconAlert(props) {
   );
 }
 
+export function IconPencil(props) {
+  return (
+    <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor" {...props}>
+      <path d="M13.586 3.586a2 2 0 0 1 2.828 2.828l-8.5 8.5a1 1 0 0 1-.497.263l-3.25.75a1 1 0 0 1-1.2-1.2l.75-3.25a1 1 0 0 1 .263-.497l8.606-8.394ZM12.172 5 5.5 11.672l-.47 2.036 2.036-.47L13.828 6.5 12.172 5Z" />
+    </svg>
+  );
+}
+
+export function IconTrash(props) {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" {...base} {...props}>
+      <path d="M4 7h16" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
+      <path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13" />
+      <path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3" />
+    </svg>
+  );
+}
+
+export function IconQrCode(props) {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" {...base} {...props}>
+      <rect x="3" y="3" width="7" height="7" rx="1" />
+      <rect x="14" y="3" width="7" height="7" rx="1" />
+      <rect x="3" y="14" width="7" height="7" rx="1" />
+      <path d="M14 14h3v3h-3z" />
+      <path d="M20 14h1v1" />
+      <path d="M14 20h1" />
+      <path d="M20 18v3h-3" />
+    </svg>
+  );
+}
+
+export function IconSend(props) {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" {...base} {...props}>
+      <path d="m3 3 18 9-18 9 4-9-4-9Z" />
+      <path d="M7 12h11" />
+    </svg>
+  );
+}
+
 export function deviceIcon(type, props) {
   if (type === "phone") return <IconPhone {...props} />;
   if (type === "tablet") return <IconTablet {...props} />;

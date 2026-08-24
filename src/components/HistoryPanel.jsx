@@ -1,13 +1,12 @@
 "use client";
 
 import { IconCode, IconFile } from "@/components/Icons";
-import { formatBytes, formatRelativeTime } from "@/lib/format";
-import { cx } from "@/lib/format";
+import { formatBytes, formatRelativeTime, cx } from "@/lib/format";
 
 export default function HistoryPanel({ history }) {
   if (!history.length) {
     return (
-      <div className="rounded-2xl border border-dashed border-neutral-800 bg-neutral-900/30 p-4 text-center text-xs text-neutral-500">
+      <div className="rounded-2xl border border-dashed border-neutral-800 bg-neutral-900/30 p-4 text-center text-sm text-neutral-500">
         Completed transfers will show up here.
       </div>
     );
@@ -23,7 +22,7 @@ export default function HistoryPanel({ history }) {
           <span
             className={cx(
               "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg",
-              entry.itemType === "text" ? "bg-violet-500/10 text-violet-300" : "bg-neutral-800 text-neutral-400",
+              entry.itemType === "text" ? "bg-violet-500/10 text-violet-300" : "bg-emerald-500/10 text-emerald-300",
             )}
           >
             {entry.itemType === "text" ? <IconCode /> : <IconFile />}

@@ -26,32 +26,31 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-950 text-gray-100 p-4">
-      <div className="w-full max-w-md bg-gray-900 border border-gray-800 rounded-xl p-8 shadow-xl">
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold tracking-tight">LocalDrop</h1>
-          <p className="text-sm text-gray-400 mt-1">Enter your password to continue</p>
+    <main className="flex min-h-[100dvh] items-center justify-center bg-black p-4 text-neutral-100">
+      <div className="w-full max-w-md rounded-2xl border border-neutral-800 bg-neutral-900/70 p-8 shadow-2xl shadow-black/40 backdrop-blur-sm">
+        <div className="mb-6 flex flex-col items-center text-center">
+          <img src="/logo.png" alt="PearDrop" className="mb-3 h-14 w-14 rounded-2xl" />
+          <h1 className="font-display text-2xl font-bold tracking-tight text-white">PearDrop</h1>
+          <p className="mt-1 text-sm text-neutral-400">Enter your password to continue</p>
         </div>
 
         <form action={handleLogin} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-400 mb-1">
-              Password
-            </label>
+            <label className="mb-1 block text-xs font-medium text-neutral-400">Password</label>
             <input
               type="password"
               name="password"
               required
-              className="w-full px-3 py-2 bg-gray-950 border border-gray-800 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-xl border border-neutral-700 bg-black px-3 py-2.5 text-sm text-white outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
               placeholder="••••••••"
             />
           </div>
 
           <button
             type="submit"
-            className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-500 text-white font-medium text-sm rounded-lg transition-colors"
+            className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-violet-600 px-4 py-2.5 text-sm font-medium text-white transition hover:opacity-90"
           >
-            Access LocalDrop
+            Access PearDrop
           </button>
         </form>
       </div>

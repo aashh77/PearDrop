@@ -73,6 +73,7 @@ export class PeerSession {
     this.incoming = null; // active inbound transfer state
     this.reconnectAttempts = 0;
     this.pendingCandidates = [];
+    this.pendingSends = new Map(); // transferId -> { cancel() }
   }
 
   _setState(state) {
@@ -203,6 +204,9 @@ export class PeerSession {
       case "file-reject":
         this.callbacks.onFileReject?.(message);
         break;
+      case "file-cancel":
+        this._handleFileCancelled(message);
+        break;
       case "file-end":
         this._finalizeIncomingFile(message);
         break;
@@ -292,6 +296,17 @@ export class PeerSession {
     this.channel?.send(JSON.stringify({ kind: "file-reject", transferId }));
   }
 
+  /** Called when the remote peer cancels an offer we haven't finished receiving. */
+  _handleFileCancelled(message) {
+    if (this.incoming && this.incoming.transferId === message.transferId) {
+      if (this.incoming.writer) {
+        this.incoming.writer.abort?.().catch(() => {});
+      }
+      this.incoming = null;
+    }
+    this.callbacks.onFileCancelled?.(message.transferId);
+  }
+
   acceptIncomingFile(transferId) {
     this.channel?.send(JSON.stringify({ kind: "file-accept", transferId }));
   }
@@ -325,19 +340,20 @@ export class PeerSession {
     }
 
     return new Promise((resolve, reject) => {
-      const onAccept = (message) => {
-        if (message.transferId !== transferId) return;
-        this._streamFile(file, transferId, onProgress).then(resolve, reject);
-        cleanup();
-      };
-      const onReject = (message) => {
-        if (message.transferId !== transferId) return;
-        reject(new Error("Transfer rejected by peer"));
-        cleanup();
-      };
       const cleanup = () => {
         this.callbacks.onFileAccept = originalAccept;
         this.callbacks.onFileReject = originalReject;
+        this.pendingSends.delete(transferId);
+      };
+      const onAccept = (message) => {
+        if (message.transferId !== transferId) return;
+        cleanup();
+        this._streamFile(file, transferId, onProgress).then(resolve, reject);
+      };
+      const onReject = (message) => {
+        if (message.transferId !== transferId) return;
+        cleanup();
+        reject(new Error("Transfer rejected by peer"));
       };
 
       const originalAccept = this.callbacks.onFileAccept;
@@ -350,6 +366,20 @@ export class PeerSession {
         originalReject?.(message);
         onReject(message);
       };
+
+      this.pendingSends.set(transferId, {
+        cancel: () => {
+          cleanup();
+          try {
+            if (channel.readyState === "open") {
+              channel.send(JSON.stringify({ kind: "file-cancel", transferId }));
+            }
+          } catch {
+            // ignore - channel may already be closing
+          }
+          reject(new Error("Transfer cancelled by sender"));
+        },
+      });
 
       channel.send(
         JSON.stringify({
@@ -364,6 +394,18 @@ export class PeerSession {
         }),
       );
     });
+  }
+
+  /**
+   * Cancels a file offer that's still waiting on the receiver's decision
+   * (i.e. before any bytes have been streamed). Returns true if there was a
+   * pending offer to cancel.
+   */
+  cancelSendFile(transferId) {
+    const pending = this.pendingSends.get(transferId);
+    if (!pending) return false;
+    pending.cancel();
+    return true;
   }
 
   async _streamFile(file, transferId, onProgress) {
@@ -394,6 +436,7 @@ export class PeerSession {
   }
 
   close() {
+    this.pendingSends.clear();
     try {
       this.channel?.close();
     } catch {

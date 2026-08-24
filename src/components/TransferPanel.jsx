@@ -1,7 +1,9 @@
 "use client";
 
-import { deviceIcon } from "@/components/Icons";
+import { useState } from "react";
+import Avatar from "@/components/Avatar";
 import FileDropZone from "@/components/FileDropZone";
+import PendingFileList from "@/components/PendingFileList";
 import ProgressItem from "@/components/ProgressItem";
 import SnippetEditor from "@/components/SnippetEditor";
 import SnippetCard from "@/components/SnippetCard";
@@ -16,16 +18,51 @@ const STATUS_TEXT = {
   closed: "Connection closed.",
 };
 
-export default function TransferPanel({ peer, status, items, snippets, onSendFiles, onSendSnippet, myName }) {
+export default function TransferPanel({
+  peer,
+  status,
+  items,
+  snippets,
+  onSendFiles,
+  onSendSnippet,
+  onCancelSend,
+  onRenameItem,
+  myName,
+}) {
   const connected = status === "connected";
   const ordered = [...items].sort((a, b) => (a.startedAt || 0) - (b.startedAt || 0));
+  const [staged, setStaged] = useState([]);
+
+  function stageFiles(files) {
+    setStaged((prev) => [...prev, ...files.map((file) => ({ localId: crypto.randomUUID(), file, name: file.name }))]);
+  }
+
+  function renameStaged(localId, name) {
+    setStaged((prev) => prev.map((entry) => (entry.localId === localId ? { ...entry, name } : entry)));
+  }
+
+  function removeStaged(localId) {
+    setStaged((prev) => prev.filter((entry) => entry.localId !== localId));
+  }
+
+  function sendStaged(localId) {
+    const entry = staged.find((e) => e.localId === localId);
+    if (!entry) return;
+    setStaged((prev) => prev.filter((e) => e.localId !== localId));
+    onSendFiles([{ file: entry.file, name: entry.name }]);
+  }
+
+  function sendAllStaged() {
+    if (!staged.length) return;
+    const toSend = staged.map((entry) => ({ file: entry.file, name: entry.name }));
+    setStaged([]);
+    onSendFiles(toSend);
+  }
 
   return (
     <div className="flex flex-1 flex-col gap-4">
       <div className="flex items-center gap-3 rounded-2xl border border-neutral-800 bg-neutral-900/60 px-4 py-3 backdrop-blur-sm">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-800 text-neutral-200">
-          {deviceIcon(peer.deviceType)}
-        </div>
+        <Avatar name={peer.name} deviceType={peer.deviceType} size="md" />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-white">{peer.name}</p>
           <p className="text-xs text-neutral-400">{STATUS_TEXT[status] || status}</p>
@@ -37,7 +74,18 @@ export default function TransferPanel({ peer, status, items, snippets, onSendFil
         )}
       </div>
 
-      <FileDropZone disabled={!connected} onFiles={(files) => onSendFiles(files)} />
+      <FileDropZone disabled={!connected} onFiles={stageFiles} />
+
+      {staged.length > 0 && (
+        <PendingFileList
+          entries={staged}
+          disabled={!connected}
+          onRename={renameStaged}
+          onRemove={removeStaged}
+          onSend={sendStaged}
+          onSendAll={sendAllStaged}
+        />
+      )}
 
       <SnippetEditor disabled={!connected} onSend={onSendSnippet} />
 
@@ -45,7 +93,7 @@ export default function TransferPanel({ peer, status, items, snippets, onSendFil
         <div className="flex flex-col gap-2">
           <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Transfers</p>
           {ordered.map((item) => (
-            <ProgressItem key={item.id} item={item} />
+            <ProgressItem key={item.id} item={item} onCancel={onCancelSend} onRename={onRenameItem} />
           ))}
         </div>
       )}
