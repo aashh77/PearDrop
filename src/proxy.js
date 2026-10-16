@@ -3,11 +3,18 @@ import { NextResponse } from 'next/server';
 export function proxy(request) {
   const { pathname } = request.nextUrl;
 
-  // Allow the login page, SSE event stream, and health checks to pass through freely
+  // Allow the login page, SSE event stream, health checks, and the static
+  // PWA assets to pass through freely. Chrome fetches the manifest and icons
+  // without your login cookie, so they must not be gated.
   if (
     pathname.startsWith('/login') ||
     pathname.startsWith('/api/signal/events') ||
-    pathname.startsWith('/api/health')
+    pathname.startsWith('/api/health') ||
+    pathname === '/manifest.json' ||
+    pathname === '/sw.js' ||
+    pathname === '/logo.png' ||
+    pathname === '/logo.svg' ||
+    pathname.startsWith('/icons/')
   ) {
     return NextResponse.next();
   }
